@@ -19,26 +19,33 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect()
-    const allServiceCollection = client.db("eventy-data-collection").collection("all-service");
-    const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
-    const allVenueCollection = client.db("eventy-data-collection").collection("all-venue");
-    const userCollection = client.db("eventy-data-collection").collection("all-users");
+    await client.connect();
+    const allServiceCollection = client
+      .db("eventy-data-collection")
+      .collection("all-service");
+    const allReviewCollection = client
+      .db("eventy-data-collection")
+      .collection("all-review");
+    const allVenueCollection = client
+      .db("eventy-data-collection")
+      .collection("all-venue");
+    const userCollection = client
+      .db("eventy-data-collection")
+      .collection("all-users");
 
-    app.get('/post-review', async (req, res)=> {
+    app.get("/post-review", async (req, res) => {
       const reviews = await allReviewCollection.find().toArray();
       res.send(reviews);
     });
-    app.post('/post-review', async (req, res) => {
-      const user = await allReviewCollection.findOne({email: req.body.email});
-      if(user?.email){
-        res.send({insert:false});
-      }
-      else{
+    app.post("/post-review", async (req, res) => {
+      const user = await allReviewCollection.findOne({ email: req.body.email });
+      if (user?.email) {
+        res.send({ insert: false });
+      } else {
         const postReview = await allReviewCollection.insertOne(req.body);
-        res.send({insert:true});
+        res.send({ insert: true });
       }
-    })
+    });
 
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -57,11 +64,12 @@ async function run() {
       res.send(result);
     });
 
-    app.delete('/delete-user/:id', async (req, res) => {
-      const deleteSpecificUser = await userCollection.deleteOne({ _id: ObjectId(req.params.id) })
-      res.send(deleteSpecificUser)
-    })
-
+    app.delete("/delete-user/:id", async (req, res) => {
+      const deleteSpecificUser = await userCollection.deleteOne({
+        _id: ObjectId(req.params.id),
+      });
+      res.send(deleteSpecificUser);
+    });
   } finally {
   }
 }
