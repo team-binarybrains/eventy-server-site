@@ -21,10 +21,19 @@ async function run() {
     const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
 
 
-    
+    app.get('/post-review', async (req, res)=> {
+      const reviews = await allReviewCollection.find().toArray();
+      res.send(reviews);
+    });
     app.post('/post-review', async (req, res) => {
-      const postReview = await allReviewCollection.insertOne(req.body)
-      res.send(postReview)
+      const user = await allReviewCollection.findOne({email: req.body.email});
+      if(user?.email){
+        res.send({insert:false});
+      }
+      else{
+        const postReview = await allReviewCollection.insertOne(req.body);
+        res.send({insert:true});
+      }
     })
 
   } finally {
