@@ -41,11 +41,15 @@ async function run() {
       const result = await userCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     });
+
+
     app.get("allusers", async (req, res) => {
       const query = {};
       const result = await userCollection.find(query).toArray();
       res.send(result);
     });
+
+    
   } finally {
   }
 }
