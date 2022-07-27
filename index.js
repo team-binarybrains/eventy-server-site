@@ -56,6 +56,12 @@ async function run() {
       const result = await userCollection.find(query).toArray();
       res.send(result);
     });
+
+    app.delete('/delete-user/:id', async (req, res) => {
+      const deleteSpecificUser = await userCollection.deleteOne({ _id: ObjectId(req.params.id) })
+      res.send(deleteSpecificUser)
+    })
+
   } finally {
   }
 }
