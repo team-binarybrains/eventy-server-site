@@ -163,7 +163,7 @@ async function run() {
       res.send(result);
     });
     // single-user load
-    app.get("/single-user/:email", async (req, res) => {
+    app.get("/single/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email:email };
       const result = await userCollection.find(filter).toArray();
