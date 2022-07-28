@@ -100,7 +100,21 @@ async function run() {
       res.send(postReview)
     })
 
-    app.get("/post-review", async (req, res) => {
+    //  admin verification
+    const verifyAdmin = async (req, res, next) => {
+      const userEmail = req.decoded?.email;
+      // console.log(userEmail);
+      const user = await userCollection.findOne({
+        email: userEmail,
+      });
+      if (user?.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "Forbidden access" });
+      }
+    };
+
+    app.get('/post-review', async (req, res)=> {
       const reviews = await allReviewCollection.find().toArray();
       res.send(reviews);
     });
@@ -113,6 +127,14 @@ async function run() {
         const postReview = await allReviewCollection.insertOne(req.body);
         res.send({ insert: true });
       }
+    });
+
+    // get an admin
+    app.get("/admin/:email", varifyJwt ,async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
     });
 
     app.put("/user/:email", async (req, res) => {
