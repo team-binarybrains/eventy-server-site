@@ -62,9 +62,8 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/selectVenu/:email", async (req, res) => {
-      const query = { email: req.params.email }
-      const venu = await selectVenuCollection.find(query).toArray();
+    app.get("/selectVenu", async (req, res) => {
+      const venu = await selectVenuCollection.find().toArray();
       res.send(venu);
     })
 
@@ -81,8 +80,13 @@ async function run() {
 
     app.post("/booking", async (req, res) => {
       const bookingInfo = req.body;
-      const result = await allBookingCollection.insertOne(bookingInfo);
-      res.send(result);
+      const exists = await allBookingCollection.findOne({ date: bookingInfo.date, venuLocation: bookingInfo.venuLocation })
+      if (exists) {
+        res.send({ message: "This Venu Already booked, Please Date change and try another" });
+      } else {
+        const result = await allBookingCollection.insertOne(bookingInfo);
+        res.send(result);
+      }
     })
 
     app.delete("/selectVenuDelete/:id", async (req, res) => {
