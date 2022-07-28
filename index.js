@@ -41,18 +41,18 @@ async function run() {
     const allVenueCollection = client.db("eventy-data-collection").collection("all-venue");
     const userCollection = client.db("eventy-data-collection").collection("all-users");
 
-    app.get('/post-review', async (req, res)=> {
+    app.get('/post-review', async (req, res) => {
       const reviews = await allReviewCollection.find().toArray();
       res.send(reviews);
     });
     app.post('/post-review', async (req, res) => {
-      const user = await allReviewCollection.findOne({email: req.body.email});
-      if(user?.email){
-        res.send({insert:false});
+      const user = await allReviewCollection.findOne({ email: req.body.email });
+      if (user?.email) {
+        res.send({ insert: false });
       }
-      else{
+      else {
         const postReview = await allReviewCollection.insertOne(req.body);
-        res.send({insert:true});
+        res.send({ insert: true });
       }
     })
 
@@ -70,11 +70,16 @@ async function run() {
       });
       res.send({ result, token });
     });
-
-
     app.get("/allusers", async (req, res) => {
       const query = {};
       const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+    // single-user load
+    app.get("/single-user/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email:email };
+      const result = await userCollection.find(filter).toArray();
       res.send(result);
     });
 
@@ -83,7 +88,7 @@ async function run() {
       res.send(deleteSpecificUser)
     })
 
-   
+
 
   } finally {
   }
