@@ -41,6 +41,20 @@ async function run() {
     const allVenueCollection = client.db("eventy-data-collection").collection("all-venue");
     const userCollection = client.db("eventy-data-collection").collection("all-users");
 
+    //  admin verification
+    const verifyAdmin = async (req, res, next) => {
+      const userEmail = req.decoded?.email;
+      // console.log(userEmail);
+      const user = await userCollection.findOne({
+        email: userEmail,
+      });
+      if (user?.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "Forbidden access" });
+      }
+    };
+
     app.get('/post-review', async (req, res)=> {
       const reviews = await allReviewCollection.find().toArray();
       res.send(reviews);
