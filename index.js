@@ -75,13 +75,7 @@ async function run() {
       const result = await userCollection.find(query).toArray();
       res.send(result);
     });
-    // single-user load
-    app.get("/single-user/:email", async (req, res) => {
-      const email = req.params.email;
-      const filter = { email:email };
-      const result = await userCollection.find(filter).toArray();
-      res.send(result);
-    });
+
 
     app.delete('/delete-user/:id', async (req, res) => {
       const deleteSpecificUser = await userCollection.deleteOne({ _id: ObjectId(req.params.id) })
