@@ -62,16 +62,19 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/selectVenu", async (req, res) => {
-      const venu = await selectVenuCollection.find().toArray();
+    app.get("/selectVenu/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email:email}
+      const venu = await selectVenuCollection.find(query).toArray();
       res.send(venu);
     })
 
     app.post("/venuInsert", async (req, res) => {
       const selectVenu = req.body;
-      const venuCount = await selectVenuCollection.find().toArray();
+      const query = {email:selectVenu.email}
+      const venuCount = await selectVenuCollection.find(query).toArray();
       if (venuCount.length) {
-        res.send({ acknowledged: false });
+        res.send({ message: "You have already Select Venu" });
       } else {
         const venuPost = await selectVenuCollection.insertOne(selectVenu);
         res.send(venuPost);
