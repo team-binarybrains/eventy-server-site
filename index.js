@@ -19,6 +19,7 @@ async function run() {
     await client.connect()
     const allServiceCollection = client.db("eventy-data-collection").collection("all-service");
     const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
+    const allVenue = client.db("eventy-data-collection").collection("all-Venue");
 
 
     
@@ -26,7 +27,15 @@ async function run() {
       const postReview = await allReviewCollection.insertOne(req.body)
       res.send(postReview)
     })
-
+// allItems
+    app.get("/allItems", async (req, res) => {
+      const query = {};
+      const cursor = allServiceCollection.find(query);
+      const allItems = await cursor.toArray();
+      res.send(allItems);
+    });
+    // all venue
+  
   } finally {
   }
 }
