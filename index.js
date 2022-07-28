@@ -176,6 +176,22 @@ async function run() {
       });
       res.send(deleteSpecificUser);
     });
+// 
+
+app.put("/updateuser/:email", async (req, res) => {
+  const email = req.params.email;
+  const user = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  const updateDoc = {
+    $set: user,
+  };
+  const result = await userCollection.updateOne(filter, updateDoc, options);
+
+  res.send(result);
+});
+
+// 
   } finally {
   }
 }
