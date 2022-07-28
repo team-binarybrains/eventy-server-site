@@ -22,6 +22,7 @@ async function run() {
     const allVenueCollection = client.db("eventy-data-collection").collection("all-venue");
     const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
     const selectVenuCollection = client.db("eventy-data-collection").collection("select-venu");
+    const allBookingCollection = client.db("eventy-data-collection").collection("all-booking");
 
     app.get("/allservices", async (req, res) => {
       const services = await allServiceCollection.find().toArray();
@@ -40,8 +41,9 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/selectVenu", async (req, res) => {
-      const venu = await selectVenuCollection.find().toArray();
+    app.get("/selectVenu/:email", async (req, res) => {
+      const query = { email: req.params.email }
+      const venu = await selectVenuCollection.find(query).toArray();
       res.send(venu);
     })
 
@@ -54,6 +56,18 @@ async function run() {
         const venuPost = await selectVenuCollection.insertOne(selectVenu);
         res.send(venuPost);
       }
+    })
+
+    app.post("/booking", async (req, res) => {
+      const bookingInfo = req.body;
+      const result = await allBookingCollection.insertOne(bookingInfo);
+      res.send(result);
+    })
+
+    app.delete("/selectVenuDelete/:id", async (req, res) => {
+      const deleteId = req.params.id;
+      const result = await selectVenuCollection.deleteOne({ _id: ObjectId(deleteId) })
+      res.send(result);
     })
 
     app.post('/post-review', async (req, res) => {
