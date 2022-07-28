@@ -78,16 +78,18 @@ async function run() {
     });
 
     app.get("/selectVenu/:email", async (req, res) => {
-      const query = { email: req.params.email };
+      const email = req.params.email;
+      const query = { email: email };
       const venu = await selectVenuCollection.find(query).toArray();
       res.send(venu);
     });
 
     app.post("/venuInsert", async (req, res) => {
       const selectVenu = req.body;
-      const venuCount = await selectVenuCollection.find().toArray();
+      const query = { email: selectVenu.email };
+      const venuCount = await selectVenuCollection.find(query).toArray();
       if (venuCount.length) {
-        res.send({ acknowledged: false });
+        res.send({ message: "You have already Select Venu" });
       } else {
         const venuPost = await selectVenuCollection.insertOne(selectVenu);
         res.send(venuPost);
@@ -96,8 +98,19 @@ async function run() {
 
     app.post("/booking", async (req, res) => {
       const bookingInfo = req.body;
-      const result = await allBookingCollection.insertOne(bookingInfo);
-      res.send(result);
+      const exists = await allBookingCollection.findOne({
+        date: bookingInfo.date,
+        venuLocation: bookingInfo.venuLocation,
+      });
+      if (exists) {
+        res.send({
+          message:
+            "This Venu Already booked, Please Date change and try another",
+        });
+      } else {
+        const result = await allBookingCollection.insertOne(bookingInfo);
+        res.send(result);
+      }
     });
 
     app.delete("/selectVenuDelete/:id", async (req, res) => {
@@ -113,6 +126,20 @@ async function run() {
       res.send(postReview);
     });
 
+    //  admin verification
+    const verifyAdmin = async (req, res, next) => {
+      const userEmail = req.decoded?.email;
+      // console.log(userEmail);
+      const user = await userCollection.findOne({
+        email: userEmail,
+      });
+      if (user?.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "Forbidden access" });
+      }
+    };
+
     app.get("/post-review", async (req, res) => {
       const reviews = await allReviewCollection.find().toArray();
       res.send(reviews);
@@ -126,6 +153,14 @@ async function run() {
         const postReview = await allReviewCollection.insertOne(req.body);
         res.send({ insert: true });
       }
+    });
+
+    // get an admin
+    app.get("/admin/:email", varifyJwt, async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
     });
 
     app.put("/user/:email", async (req, res) => {
@@ -164,6 +199,20 @@ async function run() {
       const query = {};
       const result = await userCollection.find(query).toArray();
       res.send(result);
+    });
+    // single-user load
+    app.get("/single-user/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const result = await userCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.delete("/delete-user/:id", async (req, res) => {
+      const deleteSpecificUser = await userCollection.deleteOne({
+        _id: ObjectId(req.params.id),
+      });
+      res.send(deleteSpecificUser);
     });
 
     app.delete("/delete-user/:id", async (req, res) => {
