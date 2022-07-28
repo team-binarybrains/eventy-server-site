@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { application } = require("express");
+
 const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -35,24 +37,91 @@ function varifyJwt(req, res, next) {
 
 async function run() {
   try {
-    await client.connect();
-    const allServiceCollection = client
-      .db("eventy-data-collection")
-      .collection("all-service");
-    const allReviewCollection = client
-      .db("eventy-data-collection")
-      .collection("all-review");
-    const allVenueCollection = client
-      .db("eventy-data-collection")
-      .collection("all-venue");
-    const userCollection = client
-      .db("eventy-data-collection")
-      .collection("all-users");
+    await client.connect()
+    const allServiceCollection = client.db("eventy-data-collection").collection("all-service");
+    const allVenueCollection = client.db("eventy-data-collection").collection("all-venue");
+    const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
+    const selectVenuCollection = client.db("eventy-data-collection").collection("select-venu");
+    const allBookingCollection = client.db("eventy-data-collection").collection("all-booking");
+    const userCollection = client.db("eventy-data-collection").collection("all-users");
 
-    app.get("/post-review", async (req, res) => {
+    app.get("/allservices", async (req, res) => {
+      const services = await allServiceCollection.find().toArray();
+      res.send(services);
+    })
+
+    app.get("/allvenues", async (req, res) => {
+      const venues = await allVenueCollection.find().toArray();
+      res.send(venues);
+    })
+
+    app.get("/allservices/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await allServiceCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.get("/selectVenu/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email:email}
+      const venu = await selectVenuCollection.find(query).toArray();
+      res.send(venu);
+    })
+
+    app.post("/venuInsert", async (req, res) => {
+      const selectVenu = req.body;
+      const query = {email:selectVenu.email}
+      const venuCount = await selectVenuCollection.find(query).toArray();
+      if (venuCount.length) {
+        res.send({ message: "You have already Select Venu" });
+      } else {
+        const venuPost = await selectVenuCollection.insertOne(selectVenu);
+        res.send(venuPost);
+      }
+    })
+
+    app.post("/booking", async (req, res) => {
+      const bookingInfo = req.body;
+      const exists = await allBookingCollection.findOne({ date: bookingInfo.date, venuLocation: bookingInfo.venuLocation })
+      if (exists) {
+        res.send({ message: "This Venu Already booked, Please Date change and try another" });
+      } else {
+        const result = await allBookingCollection.insertOne(bookingInfo);
+        res.send(result);
+      }
+    })
+
+    app.delete("/selectVenuDelete/:id", async (req, res) => {
+      const deleteId = req.params.id;
+      const result = await selectVenuCollection.deleteOne({ _id: ObjectId(deleteId) })
+      res.send(result);
+    })
+
+    app.post('/post-review', async (req, res) => {
+      const postReview = await allReviewCollection.insertOne(req.body)
+      res.send(postReview)
+    })
+
+    //  admin verification
+    const verifyAdmin = async (req, res, next) => {
+      const userEmail = req.decoded?.email;
+      // console.log(userEmail);
+      const user = await userCollection.findOne({
+        email: userEmail,
+      });
+      if (user?.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "Forbidden access" });
+      }
+    };
+
+    app.get('/post-review', async (req, res)=> {
       const reviews = await allReviewCollection.find().toArray();
       res.send(reviews);
     });
+
     app.post("/post-review", async (req, res) => {
       const user = await allReviewCollection.findOne({ email: req.body.email });
       if (user?.email) {
@@ -61,6 +130,14 @@ async function run() {
         const postReview = await allReviewCollection.insertOne(req.body);
         res.send({ insert: true });
       }
+    });
+
+    // get an admin
+    app.get("/admin/:email", varifyJwt ,async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
     });
 
     app.put("/user/:email", async (req, res) => {
@@ -85,6 +162,21 @@ async function run() {
       const result = await userCollection.find(query).toArray();
       res.send(result);
     });
+    // single-user load
+    app.get("/single-user/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email:email };
+      const result = await userCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    // app.delete('/delete-user/:id', async (req, res) => {
+    //   const deleteSpecificUser = await userCollection.deleteOne({ _id: ObjectId(req.params.id) })
+    //   res.send(deleteSpecificUser)
+    // })
+
+
+
 
     app.delete("/delete-user/:id", async (req, res) => {
       const deleteSpecificUser = await userCollection.deleteOne({
