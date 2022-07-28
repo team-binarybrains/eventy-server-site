@@ -4,6 +4,7 @@ require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { application } = require("express");
 
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -11,9 +12,28 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xk61tih.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
+});
+
+function varifyJwt(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401).send({ message: "Un authorize access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    // console.log("this is decoded", decoded);
+    next();
+  });
+}
 
 async function run() {
   try {
@@ -23,6 +43,7 @@ async function run() {
     const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
     const selectVenuCollection = client.db("eventy-data-collection").collection("select-venu");
     const allBookingCollection = client.db("eventy-data-collection").collection("all-booking");
+    const userCollection = client.db("eventy-data-collection").collection("all-users");
 
     app.get("/allservices", async (req, res) => {
       const services = await allServiceCollection.find().toArray();
@@ -75,6 +96,48 @@ async function run() {
       res.send(postReview)
     })
 
+    app.get("/post-review", async (req, res) => {
+      const reviews = await allReviewCollection.find().toArray();
+      res.send(reviews);
+    });
+
+    app.post("/post-review", async (req, res) => {
+      const user = await allReviewCollection.findOne({ email: req.body.email });
+      if (user?.email) {
+        res.send({ insert: false });
+      } else {
+        const postReview = await allReviewCollection.insertOne(req.body);
+        res.send({ insert: true });
+      }
+    });
+
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      var token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "40d",
+      });
+      res.send({ result, token });
+    });
+
+    app.get("/allusers", async (req, res) => {
+      const query = {};
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete("/delete-user/:id", async (req, res) => {
+      const deleteSpecificUser = await userCollection.deleteOne({
+        _id: ObjectId(req.params.id),
+      });
+      res.send(deleteSpecificUser);
+    });
   } finally {
   }
 }
