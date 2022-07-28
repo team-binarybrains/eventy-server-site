@@ -171,20 +171,18 @@ async function run() {
     // all venue
 
     // my booking
-    app.get("/myBooking",async (req, res) => {
-      const decodedEmail = req.decoded.email;
-      const email = req.query.email;
-      if (email === decodedEmail) {
-        console.log(email);
-        const query = { email: email };
-        console.log(query);
-        const cursor = allBookingCollection.find(query);
-        const myBookingItems = await cursor.toArray();
-        console.log(myBookingItems);
-        res.send(myBookingItems);
-      } else {
-        res.status(403).send({ message: "Access denied! Forbidden access" });
-      }
+    app.get("/myBooking", async (req, res) => {
+      const query = {};
+      const cursor = allBookingCollection.find(query);
+      const services = await cursor.toArray();
+      res.send(services);
+    });
+
+    app.delete("/myBooking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await allBookingCollection.deleteOne(query);
+      res.send(result);
     });
   
   } finally {
