@@ -37,36 +37,51 @@ function varifyJwt(req, res, next) {
 
 async function run() {
   try {
-    await client.connect()
-    const allServiceCollection = client.db("eventy-data-collection").collection("all-service");
-    const allVenueCollection = client.db("eventy-data-collection").collection("all-venue");
-    const allReviewCollection = client.db("eventy-data-collection").collection("all-review");
-    const selectVenuCollection = client.db("eventy-data-collection").collection("select-venu");
-    const allBookingCollection = client.db("eventy-data-collection").collection("all-booking");
-    const userCollection = client.db("eventy-data-collection").collection("all-users");
+    await client.connect();
+    const allServiceCollection = client
+      .db("eventy-data-collection")
+      .collection("all-service");
+    const allVenueCollection = client
+      .db("eventy-data-collection")
+      .collection("all-venue");
+    const allReviewCollection = client
+      .db("eventy-data-collection")
+      .collection("all-review");
+    const selectVenuCollection = client
+      .db("eventy-data-collection")
+      .collection("select-venu");
+    const allBookingCollection = client
+      .db("eventy-data-collection")
+      .collection("all-booking");
+    const userCollection = client
+      .db("eventy-data-collection")
+      .collection("all-users");
+    const updateUserCollection = client
+      .db("eventy-data-collection")
+      .collection("update-User");
 
     app.get("/allservices", async (req, res) => {
       const services = await allServiceCollection.find().toArray();
       res.send(services);
-    })
+    });
 
     app.get("/allvenues", async (req, res) => {
       const venues = await allVenueCollection.find().toArray();
       res.send(venues);
-    })
+    });
 
     app.get("/allservices/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await allServiceCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     app.get("/selectVenu/:email", async (req, res) => {
-      const query = { email: req.params.email }
+      const query = { email: req.params.email };
       const venu = await selectVenuCollection.find(query).toArray();
       res.send(venu);
-    })
+    });
 
     app.post("/venuInsert", async (req, res) => {
       const selectVenu = req.body;
@@ -77,24 +92,26 @@ async function run() {
         const venuPost = await selectVenuCollection.insertOne(selectVenu);
         res.send(venuPost);
       }
-    })
+    });
 
     app.post("/booking", async (req, res) => {
       const bookingInfo = req.body;
       const result = await allBookingCollection.insertOne(bookingInfo);
       res.send(result);
-    })
+    });
 
     app.delete("/selectVenuDelete/:id", async (req, res) => {
       const deleteId = req.params.id;
-      const result = await selectVenuCollection.deleteOne({ _id: ObjectId(deleteId) })
+      const result = await selectVenuCollection.deleteOne({
+        _id: ObjectId(deleteId),
+      });
       res.send(result);
-    })
+    });
 
-    app.post('/post-review', async (req, res) => {
-      const postReview = await allReviewCollection.insertOne(req.body)
-      res.send(postReview)
-    })
+    app.post("/post-review", async (req, res) => {
+      const postReview = await allReviewCollection.insertOne(req.body);
+      res.send(postReview);
+    });
 
     app.get("/post-review", async (req, res) => {
       const reviews = await allReviewCollection.find().toArray();
@@ -125,7 +142,24 @@ async function run() {
       });
       res.send({ result, token });
     });
+    app.put("/updateuser/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
 
+      res.send(result);
+    });
+    app.get("/singleUser/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
     app.get("/allusers", async (req, res) => {
       const query = {};
       const result = await userCollection.find(query).toArray();
