@@ -176,6 +176,30 @@ async function run() {
       });
       res.send(deleteSpecificUser);
     });
+// allItems
+    app.get("/allItems", async (req, res) => {
+      const query = {};
+      const cursor = allServiceCollection.find(query);
+      const allItems = await cursor.toArray();
+      res.send(allItems);
+    });
+    // all venue
+
+    // my booking
+    app.get("/myBooking", async (req, res) => {
+      const query = {};
+      const cursor = allBookingCollection.find(query);
+      const services = await cursor.toArray();
+      res.send(services);
+    });
+
+    app.delete("/myBooking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await allBookingCollection.deleteOne(query);
+      res.send(result);
+    });
+  
 // 
 
 app.put("/updateuser/:email", async (req, res) => {
