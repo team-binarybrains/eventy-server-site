@@ -185,14 +185,7 @@ async function run() {
     });
     // all venue
 
-    // my booking
-    app.get("/myBooking", async (req, res) => {
-      const query = {};
-      const cursor = allBookingCollection.find(query);
-      const services = await cursor.toArray();
-      res.send(services);
-    });
-
+    //delete my booking 
     app.delete("/myBooking/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -200,7 +193,15 @@ async function run() {
       res.send(result);
     });
   
-// 
+// my booking
+app.get("/myBooking/:email",  async (req, res) => {
+  const email = req.params.email;
+    const query = { bookingPersonEmail: email };
+    const myBookingItems =await allBookingCollection.find(query).toArray();
+    console.log(myBookingItems,'my best booking');
+    res.send(myBookingItems);
+ 
+});
 
 app.put("/updateuser/:email", async (req, res) => {
   const email = req.params.email;
