@@ -44,7 +44,6 @@ async function run() {
     const selectVenuCollection = client.db("eventy-data-collection").collection("select-venu");
     const allBookingCollection = client.db("eventy-data-collection").collection("all-booking");
     const userCollection = client.db("eventy-data-collection").collection("all-users");
-    const allVenue = client.db("eventy-data-collection").collection("all-Venue");
 
     app.get("/allservices", async (req, res) => {
       const services = await allServiceCollection.find().toArray();
@@ -64,16 +63,18 @@ async function run() {
     })
 
     app.get("/selectVenu/:email", async (req, res) => {
-      const query = { email: req.params.email }
+      const email = req.params.email;
+      const query = {email:email}
       const venu = await selectVenuCollection.find(query).toArray();
       res.send(venu);
     })
 
     app.post("/venuInsert", async (req, res) => {
       const selectVenu = req.body;
-      const venuCount = await selectVenuCollection.find().toArray();
+      const query = {email:selectVenu.email}
+      const venuCount = await selectVenuCollection.find(query).toArray();
       if (venuCount.length) {
-        res.send({ acknowledged: false });
+        res.send({ message: "You have already Select Venu" });
       } else {
         const venuPost = await selectVenuCollection.insertOne(selectVenu);
         res.send(venuPost);
@@ -82,8 +83,13 @@ async function run() {
 
     app.post("/booking", async (req, res) => {
       const bookingInfo = req.body;
-      const result = await allBookingCollection.insertOne(bookingInfo);
-      res.send(result);
+      const exists = await allBookingCollection.findOne({ date: bookingInfo.date, venuLocation: bookingInfo.venuLocation })
+      if (exists) {
+        res.send({ message: "This Venu Already booked, Please Date change and try another" });
+      } else {
+        const result = await allBookingCollection.insertOne(bookingInfo);
+        res.send(result);
+      }
     })
 
     app.delete("/selectVenuDelete/:id", async (req, res) => {
@@ -142,16 +148,25 @@ async function run() {
       const updateDoc = {
         $set: user,
       };
+      console.log(updateDoc);
       const result = await userCollection.updateOne(filter, updateDoc, options);
       var token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "40d",
       });
+      console.log(token);
       res.send({ result, token });
     });
 
     app.get("/allusers", async (req, res) => {
       const query = {};
       const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+    // single-user load
+    app.get("/single/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email:email };
+      const result = await userCollection.find(filter).toArray();
       res.send(result);
     });
 
@@ -185,6 +200,22 @@ async function run() {
       res.send(result);
     });
   
+// 
+
+app.put("/updateuser/:email", async (req, res) => {
+  const email = req.params.email;
+  const user = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  const updateDoc = {
+    $set: user,
+  };
+  const result = await userCollection.updateOne(filter, updateDoc, options);
+
+  res.send(result);
+});
+
+// 
   } finally {
   }
 }
